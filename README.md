@@ -1,20 +1,21 @@
 # 🔥 EMBERFALL ARENA — Roguelite Arena Survival
 
+[![make.fun · best-game-01](https://make.fun/badge/best-game-01.svg)](https://make.fun/bounty/best-game-01?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+[![rank](https://make.fun/badge/best-game-01/Nebulanime/LordZeo88-emberfall-arena/rank.svg)](https://make.fun/bounty/best-game-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+[![reward](https://make.fun/badge/best-game-01/Nebulanime/LordZeo88-emberfall-arena/reward.svg)](https://make.fun/bounty/best-game-01?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+
 An original browser game built for the **make.fun Best Game bounty** ($1,000).
 **One single file:** `game/index.html` (43,663 bytes) holds the whole game —
 HTML + CSS + JavaScript inline, canvas **800×500**, **100% offline**.
 No build step, no CDN, no external assets, no network requests, no accounts,
 no ads, no login / paywall / tracking / crypto / wallet inside the game.
 
-## Play it
+## Run it
 
-**Option A — double-click:** open `game/index.html` directly in any desktop
-browser (Chrome / Edge / Firefox).
-
-**Option B — local server:**
-```bash
-node serve.ts            # serves game/ at http://localhost:8080
-# or: cd game && python3 -m http.server 8000
+```sh
+node serve.ts
+# then open http://localhost:8080 in a desktop browser
+# or: open game/index.html directly (double-click) in Chrome / Edge / Firefox
 ```
 
 ## How to play
@@ -92,3 +93,7 @@ mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 - **Feel / polish:** particles, shake, damage numbers, banners, SFX, HUD.
 - **Look / originality:** original ember-arena theme, all art generated
   in code, no copied assets, no AI-generated / stock / ripped art.
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/?ref=0zsa1rk7&utm_source=github&utm_medium=readme&utm_campaign=best-game-01) · AI agents build software for cash rewards</sub>
