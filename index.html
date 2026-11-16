@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMBERFALL ARENA — Roguelite Arena Survival</title>
+<meta name="description" content="EMBERFALL ARENA: an original roguelite arena survival game. Survive the waves, collect ember shards, level up, slay the boss. 100% offline, no assets, no CDN.">
+<style>
+:root{
+  --bg:#070a14; --panel:#10182b; --panel2:#0c1220; --ink:#eef2ff; --muted:#9aa7c7;
+  --ember:#ff8c2e; --ember2:#ffb347; --cyan:#35e0ff; --hp:#ff4d6d; --gold:#ffd166;
+  --line:rgba(255,255,255,.09);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:radial-gradient(900px 500px at 50% -10%,#1b2340 0%,var(--bg) 60%);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+#app{max-width:840px;margin:0 auto;padding:14px 14px 20px}
+#topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.brand{font-weight:900;letter-spacing:.14em;font-size:22px}
+.brand .flame{filter:drop-shadow(0 0 8px #ff8c2e)}
+.brand .arena{color:var(--ember)}
+.top-actions{display:flex;gap:8px}
+.chip-btn{background:#16203a;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.chip-btn:hover{border-color:var(--ember);background:#1d2a4a}
+#stage{position:relative;width:800px;max-width:100%;margin:0 auto;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#05070f;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+#game{display:block;width:800px;height:500px;max-width:100%;cursor:crosshair;background:#0a0e1a}
+.hidden{display:none !important}
+#hud{position:absolute;inset:0;pointer-events:none}
+.hud-row{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;gap:12px;padding:12px}
+.hud-left{display:flex;flex-direction:column;gap:6px;min-width:280px}
+.bar-wrap{display:flex;align-items:center;gap:8px}
+.bar-label{font-size:11px;font-weight:800;letter-spacing:.12em;width:26px;color:var(--muted)}
+.bar{position:relative;flex:1;height:18px;background:rgba(0,0,0,.55);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar>div{height:100%;transition:width .15s ease}
+.bar.hp>div{background:linear-gradient(90deg,#ff4d6d,#ff8c2e);width:100%}
+.bar.xp>div{background:linear-gradient(90deg,#1fb6ff,#35e0ff);width:0%}
+.bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;text-shadow:0 1px 2px #000}
+.hud-right{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.stat{background:rgba(0,0,0,.55);border:1px solid var(--line);border-radius:10px;padding:6px 10px;text-align:center;min-width:64px}
+.stat-k{display:block;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:800}
+.stat-v{display:block;font-size:18px;font-weight:900;line-height:1.1}
+.stat-v.big{font-size:26px}
+.combo-stat .stat-v{color:var(--gold)}
+#bossBar{position:absolute;top:64px;left:50%;transform:translateX(-50%);width:min(560px,86%);text-align:center}
+.boss-label{font-weight:900;letter-spacing:.12em;font-size:13px;color:#ffb3c1;text-shadow:0 2px 8px #000;margin-bottom:4px}
+.bar.boss{height:14px;border-color:rgba(255,77,109,.6)}
+.bar.boss>div{background:linear-gradient(90deg,#a1002e,#ff4d6d,#ff8c2e);width:100%}
+#waveBanner{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);font-size:32px;font-weight:900;letter-spacing:.08em;text-shadow:0 0 24px rgba(255,140,46,.9),0 4px 0 #000;text-align:center;white-space:nowrap}
+#toast{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:700;font-size:13px;opacity:0;transition:opacity .25s}
+#toast.show{opacity:1}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(4,6,12,.78);backdrop-filter:blur(3px);padding:16px;z-index:5}
+.panel{background:linear-gradient(180deg,#141d35,#0c1220);border:1px solid rgba(255,140,46,.35);border-radius:18px;padding:16px 20px;max-width:760px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);max-height:94%;overflow:auto}
+.panel.narrow{max-width:560px}
+.logo{font-size:34px;font-weight:900;letter-spacing:.06em;line-height:1;text-shadow:0 0 30px rgba(255,140,46,.7)}
+.logo.small{font-size:32px}
+.subtitle{letter-spacing:.34em;color:var(--ember2);font-weight:800;margin:8px 0 12px;font-size:13px}
+.tagline{color:#d6deff;line-height:1.55;margin:0 0 16px}
+.howto{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left;margin-bottom:18px}
+.howto h3{margin:0 0 8px;font-size:13px;letter-spacing:.14em;color:var(--ember2)}
+.howto ul{margin:0;padding-left:18px;line-height:1.65;color:#cdd6f2;font-size:14px}
+.gem{color:var(--cyan)}
+.best{margin-top:12px;background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.35);border-radius:10px;padding:8px 10px;font-weight:800;font-size:13px}
+.big-btn{background:linear-gradient(180deg,#ffb347,#ff7a1a);color:#1a0d00;border:0;border-radius:12px;padding:14px 22px;font-size:17px;font-weight:900;letter-spacing:.04em;cursor:pointer;box-shadow:0 8px 24px rgba(255,140,46,.35);width:100%}
+.big-btn:hover{filter:brightness(1.07)}
+.ghost-btn{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;width:100%;margin-top:10px}
+.ghost-btn:hover{border-color:var(--ember)}
+.fine{color:var(--muted);font-size:12px;line-height:1.5;margin:14px 0 0}
+.lu-title{font-size:24px;font-weight:900;letter-spacing:.04em}
+.lu-sub{color:var(--muted);margin:8px 0 16px}
+#cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.card{background:#182344;border:1px solid var(--line);border-radius:14px;padding:16px 12px;cursor:pointer;text-align:center;transition:transform .12s,border-color .12s}
+.card:hover{transform:translateY(-3px);border-color:var(--ember);background:#1e2c52}
+.card .ico{font-size:30px}
+.card h4{margin:8px 0 4px;font-size:15px}
+.card p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
+.card .key{display:inline-block;margin-top:10px;background:#0a0e1a;border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:800;color:var(--gold)}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.stats-grid>div{background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:12px;padding:12px 6px}
+.stats-grid .stat-k{display:block;font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:800}
+.newbest{color:var(--gold);font-weight:900;margin-top:10px;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.55}}
+#foot{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px;margin-top:10px;flex-wrap:wrap}
+@media (max-width:720px){
+  .howto{grid-template-columns:1fr}
+  #cards{grid-template-columns:1fr}
+  .logo{font-size:34px}
+  #waveBanner{font-size:30px}
+  .hud-left{min-width:200px}
+  .stat{min-width:52px;padding:5px 7px}
+  .stat-v{font-size:15px}
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand"><span class="flame">🔥</span> EMBERFALL <span class="arena">ARENA</span></div>
+    <div class="top-actions">
+      <button id="muteBtn" class="chip-btn" title="Mute / unmute (M)">🔊 Sound: On</button>
+      <button id="autoBtn" class="chip-btn" title="Toggle auto-fire (F)">🎯 Auto-fire: On</button>
+    </div>
+  </header>
+
+  <div id="stage">
+    <canvas id="game" width="800" height="500"></canvas>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-row">
+        <div class="hud-left">
+          <div class="bar-wrap"><span class="bar-label">HP</span><div class="bar hp"><div id="hpFill"></div><span id="hpText"></span></div></div>
+          <div class="bar-wrap"><span class="bar-label">XP</span><div class="bar xp"><div id="xpFill"></div><span id="xpText"></span></div></div>
+        </div>
+        <div class="hud-right">
+          <div class="stat"><span class="stat-k">SCORE</span><span id="scoreVal" class="stat-v">0</span></div>
+          <div class="stat"><span class="stat-k">WAVE</span><span id="waveVal" class="stat-v">1</span></div>
+          <div class="stat"><span class="stat-k">LEVEL</span><span id="levelVal" class="stat-v">1</span></div>
+          <div class="stat"><span class="stat-k">TIME</span><span id="timeVal" class="stat-v">0:00</span></div>
+          <div class="stat combo-stat"><span class="stat-k">COMBO</span><span id="comboVal" class="stat-v">×1</span></div>
+        </div>
+      </div>
+      <div id="bossBar" class="hidden">
+        <div class="boss-label">👑 <span id="bossName">EMBER WARDEN</span></div>
+        <div class="bar boss"><div id="bossFill"></div></div>
+      </div>
+      <div id="waveBanner" class="hidden"></div>
+      <div id="toast"></div>
+    </div>
+
+    <!-- START MENU -->
+    <div id="menu" class="overlay">
+      <div class="panel">
+        <div class="logo">🔥 EMBERFALL</div>
+        <div class="subtitle">ROGUELITE ARENA SURVIVAL</div>
+        <p class="tagline">The arena is burning. The ember chose <b>you</b>.<br>
+        Survive the waves, gather shards, level up — and break the Warden every 5 waves.</p>
+        <div class="howto">
+          <div class="howto-col">
+            <h3>HOW TO PLAY</h3>
+            <ul>
+              <li><b>WASD / Arrows</b> — move</li>
+              <li><b>Mouse</b> — aim &nbsp;·&nbsp; <b>Hold click / Space</b> — shoot</li>
+              <li><b>Auto-fire</b> is ON by default (F to toggle) — it auto-aims at the nearest enemy</li>
+              <li>Kill enemies → collect <span class="gem">◆</span> shards → <b>level up</b>, pick 1 of 3 upgrades</li>
+              <li><b>Boss every 5 waves.</b> Watch the red bar.</li>
+            </ul>
+          </div>
+          <div class="howto-col">
+            <h3>CONTROLS</h3>
+            <ul>
+              <li><b>P / Esc</b> — pause</li>
+              <li><b>M</b> — mute &nbsp;·&nbsp; <b>1 / 2 / 3</b> — pick upgrade</li>
+              <li><b>R</b> — restart after game over</li>
+              <li>Combo: kills within 3s raise your score multiplier.</li>
+            </ul>
+            <div class="best">🏆 BEST SCORE: <span id="bestScore">0</span> &nbsp;·&nbsp; BEST WAVE: <span id="bestWave">0</span></div>
+          </div>
+        </div>
+        <button id="startBtn" class="big-btn">▶ &nbsp;ENTER THE ARENA</button>
+        <p class="fine">Original game · 100% offline · no downloads, no accounts, no ads.<br>Art &amp; sound are generated in code (Canvas + WebAudio).</p>
+      </div>
+    </div>
+
+    <!-- LEVEL-UP -->
+    <div id="levelup" class="overlay hidden">
+      <div class="panel narrow">
+        <div class="lu-title">✦ LEVEL UP! <span id="luLevel"></span> ✦</div>
+        <p class="lu-sub">Choose one upgrade — press <b>1</b>, <b>2</b> or <b>3</b>, or click a card.</p>
+        <div id="cards"></div>
+      </div>
+    </div>
+
+    <!-- PAUSE -->
+    <div id="pauseMenu" class="overlay hidden">
+      <div class="panel narrow">
+        <div class="lu-title">⏸ PAUSED</div>
+        <p class="lu-sub">Take a breath. The ember waits for no one — except now.</p>
+        <button id="resumeBtn" class="big-btn">▶ RESUME</button>
+        <button id="quitBtn" class="ghost-btn">Quit to menu</button>
+      </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="gameover" class="overlay hidden">
+      <div class="panel narrow">
+        <div class="logo small">💀 THE EMBER FADES</div>
+        <div id="newBest" class="newbest hidden">🏆 NEW BEST SCORE!</div>
+        <div class="stats-grid">
+          <div><span class="stat-k">SCORE</span><span id="finalScore" class="stat-v big">0</span></div>
+          <div><span class="stat-k">WAVE</span><span id="finalWave" class="stat-v big">0</span></div>
+          <div><span class="stat-k">KILLS</span><span id="finalKills" class="stat-v big">0</span></div>
+          <div><span class="stat-k">TIME</span><span id="finalTime" class="stat-v big">0:00</span></div>
+          <div><span class="stat-k">LEVEL</span><span id="finalLevel" class="stat-v big">0</span></div>
+          <div><span class="stat-k">BEST</span><span id="finalBest" class="stat-v big">0</span></div>
+        </div>
+        <button id="restartBtn" class="big-btn">↻ &nbsp;PLAY AGAIN (R)</button>
+        <button id="menuBtn" class="ghost-btn">Back to menu</button>
+      </div>
+    </div>
+  </div>
+
+  <footer id="foot">
+    <span>WASD move · Mouse aim · Click / Space shoot · P pause · M mute</span>
+    <span id="fpsNote">EMBERFALL ARENA v1.0 — original work, built for make.fun Best Game</span>
+  </footer>
+</div>
+<script>
+/* EMBERFALL ARENA v1.0 — original roguelite arena survival.
+   100% offline. No CDN, no fetch, no external assets.
+   Art: Canvas. Sound: WebAudio oscillators. */
+(function () {
+'use strict';
+
+var W = 800, H = 500;
+var canvas = document.getElementById('game');
+var ctx = canvas.getContext('2d');
+
+// ---------- DOM ----------
+function $(id) { return document.getElementById(id); }
+var hud=$('hud'), menu=$('menu'), levelupEl=$('levelup'), pauseEl=$('pauseMenu'),
+    overEl=$('gameover'), cardsEl=$('cards'), toastEl=$('toast'),
+    hpFill=$('hpFill'), hpText=$('hpText'), xpFill=$('xpFill'), xpText=$('xpText'),
+    scoreVal=$('scoreVal'), waveVal=$('waveVal'), levelVal=$('levelVal'),
+    timeVal=$('timeVal'), comboVal=$('comboVal'),
+    bossBar=$('bossBar'), bossFill=$('bossFill'), bossName=$('bossName'),
+    waveBanner=$('waveBanner'), muteBtn=$('muteBtn'), autoBtn=$('autoBtn');
+
+// ---------- utils ----------
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function rand(a,b){ return a + Math.random()*(b-a); }
+function dist2(ax,ay,bx,by){ var dx=ax-bx, dy=ay-by; return dx*dx+dy*dy; }
+function fmtTime(s){ s=Math.floor(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function loadBest(){
+  try {
+    return {
+      score: parseInt(localStorage.getItem('emberfall_best_score')||'0',10)||0,
+      wave: parseInt(localStorage.getItem('emberfall_best_wave')||'0',10)||0
+    };
+  } catch(e){ return {score:0, wave:0}; }
+}
+function saveBest(score,wave){
+  try {
+    var b=loadBest();
+    if(score>b.score) localStorage.setItem('emberfall_best_score', String(score));
+    if(wave>b.wave) localStorage.setItem('emberfall_best_wave', String(wave));
+  } catch(e){}
+}
+function showBest(){
+  var b=loadBest();
+  $('bestScore').textContent=b.score.toLocaleString();
+  $('bestWave').textContent=b.wave;
+}
+
+// ---------- audio (WebAudio oscillators only) ----------
+var audioCtx=null, muted=false;
+function ac(){
+  if(!audioCtx){
+    try { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){ audioCtx=null; }
+  }
+  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+function beep(freq,dur,type,vol,slide){
+  if(muted) return;
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'square'; o.frequency.setValueAtTime(freq, c.currentTime);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,slide), c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.08, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+var sfx={
+  shoot:function(){ beep(620,0.07,'square',0.035,280); },
+  hit:function(){ beep(180,0.06,'sawtooth',0.05,90); },
+  die:function(){ beep(320,0.18,'sawtooth',0.07,60); },
+  gem:function(){ beep(880,0.08,'sine',0.06,1320); },
+  level:function(){ beep(523,0.12,'sine',0.09); setTimeout(function(){beep(659,0.12,'sine',0.09);},90); setTimeout(function(){beep(784,0.2,'sine',0.09);},180); },
+  hurt:function(){ beep(140,0.2,'sawtooth',0.09,70); },
+  boss:function(){ beep(98,0.5,'sawtooth',0.1,55); },
+  wave:function(){ beep(440,0.12,'triangle',0.08,660); }
+};
+
+// ---------- game state ----------
+var state='menu'; // menu | playing | levelup | paused | over
+var player, bullets, enemies, gems, parts, texts, ebullets, boss=null;
+var keys={}, mouse={x:W/2,y:0,firing:false,seen:false};
+var autoFire=true, shake=0, elapsed=0, spawnTimer=0, waveTimer=0;
+var wave=1, waveKills=0, waveTarget=0, waveState='fighting', betweenTimer=0;
+var score=0, kills=0, combo=0, comboTimer=0, comboMult=1;
+
+function newPlayer(){
+  return {
+    x:W/2, y:H/2, r:16, vx:0, vy:0,
+    hp:100, maxHp:100, speed:230,
+    damage:16, fireRate:3.0, bulletSpeed:520, projectiles:1, pierce:0,
+    magnet:130, crit:0.05, regen:0, armor:0,
+    level:1, xp:0, xpNext:12, angle:-Math.PI/2, fireTimer:0, invuln:0, walk:0
+  };
+}
+function reset(){
+  player=newPlayer();
+  bullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; ebullets=[]; boss=null;
+  wave=1; waveKills=0; waveTarget=waveSize(1); waveState='fighting'; betweenTimer=0;
+  score=0; kills=0; combo=0; comboTimer=0; comboMult=1; elapsed=0; spawnTimer=0; shake=0;
+  spawnWaveBanner('WAVE 1');
+  sfx.wave();
+}
+function waveSize(n){ return 7 + n*3; }
+function enemyHp(n){ return Math.round((22 + n*7) * (1 + n*0.06)); }
+
+// ---------- upgrades ----------
+var UPGRADES=[
+  {id:'dmg',   ico:'⚔️', name:'Ember Blade',  desc:'+25% bullet damage', apply:function(p){p.damage*=1.25;}},
+  {id:'rate',  ico:'⚡', name:'Rapid Ember',  desc:'+20% fire rate', apply:function(p){p.fireRate*=1.20;}},
+  {id:'multi', ico:'✦', name:'Split Shot',   desc:'+1 projectile per shot', apply:function(p){p.projectiles=Math.min(5,p.projectiles+1);}},
+  {id:'pierce',ico:'➶', name:'Piercing Flame',desc:'Bullets pierce +1 enemy', apply:function(p){p.pierce+=1;}},
+  {id:'speed', ico:'💨', name:'Swift Boots',  desc:'+12% move speed', apply:function(p){p.speed*=1.12;}},
+  {id:'hp',    ico:'❤️', name:'Heart of Ember',desc:'+25 max HP and heal 25', apply:function(p){p.maxHp+=25; p.hp=Math.min(p.maxHp,p.hp+25);}},
+  {id:'magnet',ico:'🧲', name:'Shard Magnet', desc:'+45% pickup radius', apply:function(p){p.magnet*=1.45;}},
+  {id:'crit',  ico:'🎯', name:'Deadly Aim',   desc:'+10% critical chance (2× dmg)', apply:function(p){p.crit=Math.min(0.6,p.crit+0.10);}},
+  {id:'regen', ico:'🌿', name:'Ember Regen',  desc:'Regenerate +0.8 HP / sec', apply:function(p){p.regen+=0.8;}},
+  {id:'armor', ico:'🛡️', name:'Molten Armor', desc:'Take 2 less damage per hit', apply:function(p){p.armor+=2;}},
+  {id:'bspeed',ico:'🚀', name:'Swift Shots',  desc:'+20% bullet speed', apply:function(p){p.bulletSpeed*=1.20;}},
+  {id:'heal',  ico:'✚', name:'Second Wind',  desc:'Heal 40 HP now', apply:function(p){p.hp=Math.min(p.maxHp,p.hp+40);}}
+];
+function pickUpgrades(){
+  var pool=UPGRADES.slice(), out=[];
+  while(out.length<3 && pool.length){
+    out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  }
+  return out;
+}
+var currentOffers=[];
+function openLevelUp(){
+  state='levelup';
+  $('luLevel').textContent='LEVEL '+player.level;
+  var ups=pickUpgrades();
+  currentOffers=ups;
+  cardsEl.innerHTML='';
+  ups.forEach(function(u,i){
+    var d=document.createElement('div');
+    d.className='card'; d.tabIndex=0;
+    d.innerHTML='<div class="ico">'+u.ico+'</div><h4>'+u.name+'</h4><p>'+u.desc+'</p><span class="key">'+(i+1)+'</span>';
+    d.addEventListener('click', function(){ chooseUpgrade(u); });
+    d.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); chooseUpgrade(u); } });
+    cardsEl.appendChild(d);
+  });
+  levelupEl.classList.remove('hidden');
+  sfx.level();
+}
+function chooseUpgrade(u){
+  if(state!=='levelup') return;
+  u.apply(player);
+  showToast(u.ico+' '+u.name+' — '+u.desc);
+  levelupEl.classList.add('hidden');
+  state='playing';
+}
+function gainXp(n){
+  player.xp+=n;
+  while(player.xp>=player.xpNext){
+    player.xp-=player.xpNext;
+    player.level++;
+    player.xpNext=Math.round(player.xpNext*1.28+8);
+    openLevelUp();
+    return;
+  }
+}
+
+// ---------- enemies ----------
+var ETYPES={
+  chaser:{r:15,hp:1.0,speed:78, dmg:10, score:10, xp:1, color:'#ff5a5a', name:'Cinder'},
+  runner:{r:11,hp:0.6,speed:150,dmg:8,  score:15, xp:1, color:'#ffa02e', name:'Spark'},
+  shooter:{r:14,hp:0.9,speed:55, dmg:8,  score:20, xp:2, color:'#c07bff', name:'Hexer'},
+  tank:{r:22,hp:2.6,speed:42, dmg:16, score:30, xp:3, color:'#8a6cff', name:'Bulwark'},
+  splitter:{r:13,hp:0.8,speed:95,dmg:9, score:20, xp:2, color:'#4dd8ff', name:'Splitter'}
+};
+function spawnEnemy(type, x, y){
+  var t=ETYPES[type]||ETYPES.chaser;
+  var hp=Math.round(enemyHp(wave)*t.hp);
+  enemies.push({
+    type:type, x:x, y:y, r:t.r, hp:hp, maxHp:hp, speed:t.speed*rand(0.9,1.1),
+    dmg:t.dmg, score:t.score, xp:t.xp, color:t.color, name:t.name,
+    shootTimer:rand(1.2,2.4), flash:0, wob:rand(0,6.28)
+  });
+}
+function spawnEdge(){
+  var side=Math.floor(Math.random()*4), x, y;
+  if(side===0){ x=rand(0,W); y=-20; } else if(side===1){ x=W+20; y=rand(0,H); }
+  else if(side===2){ x=rand(0,W); y=H+20; } else { x=-20; y=rand(0,H); }
+  var roll=Math.random();
+  var type = wave<2 ? (roll<0.75?'chaser':'runner')
+    : wave<3 ? (roll<0.5?'chaser':roll<0.75?'runner':roll<0.9?'shooter':'splitter')
+    : (roll<0.35?'chaser':roll<0.55?'runner':roll<0.75?'shooter':roll<0.88?'splitter':'tank');
+  spawnEnemy(type,x,y);
+}
+function spawnBoss(){
+  var hp=Math.round(420 + wave*90);
+  boss={type:'boss', x:W/2, y:-60, r:44, hp:hp, maxHp:hp, speed:52, dmg:22,
+    score:500, xp:12, color:'#ff2e63', name:'EMBER WARDEN', shootTimer:1.5, flash:0, wob:0, chargeTimer:4};
+  bossName.textContent='👑 EMBER WARDEN — WAVE '+wave;
+  bossBar.classList.remove('hidden');
+  sfx.boss();
+  showToast('👑 BOSS: EMBER WARDEN!');
+  spawnWaveBanner('⚠ BOSS — WAVE '+wave+' ⚠');
+}
+
+// ---------- fx ----------
+function burst(x,y,color,n,pow){
+  for(var i=0;i<(n||10);i++){
+    var a=rand(0,Math.PI*2), s=rand(40,pow||180);
+    parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.3,0.7),max:0.7,color:color,r:rand(2,4)});
+  }
+}
+function addText(x,y,str,color){ texts.push({x:x,y:y,str:str,color:color||'#fff',life:0.9}); }
+function showToast(msg){
+  toastEl.textContent=msg; toastEl.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(function(){ toastEl.classList.remove('show'); },2200);
+}
+function spawnWaveBanner(txt){
+  waveBanner.textContent=txt; waveBanner.classList.remove('hidden');
+  clearTimeout(spawnWaveBanner._t);
+  spawnWaveBanner._t=setTimeout(function(){ waveBanner.classList.add('hidden'); },1900);
+}
+
+// ---------- combat ----------
+function fire(){
+  var p=player;
+  var base = p.angle; // angle is set each frame by auto-aim or mouse aim
+  var n=p.projectiles;
+  for(var i=0;i<n;i++){
+    var spread=(i-(n-1)/2)*0.14;
+    var a=base+spread;
+    bullets.push({x:p.x+Math.cos(a)*20, y:p.y+Math.sin(a)*20,
+      vx:Math.cos(a)*p.bulletSpeed, vy:Math.sin(a)*p.bulletSpeed,
+      r:5, dmg:p.damage, pierce:p.pierce, hit:{}});
+  }
+  sfx.shoot();
+}
+function killEnemy(e, idx){
+  var isBoss = e.type==='boss';
+  var mult=1+Math.min(combo,20)*0.05;
+  var gained=Math.round(e.score*mult);
+  score+=gained; kills++;
+  combo++; comboTimer=3; comboMult=mult;
+  burst(e.x,e.y,e.color, isBoss?46:14, isBoss?260:170);
+  addText(e.x,e.y,'+'+gained, '#ffd166');
+  // gems
+  var nGems = isBoss?10:e.xp;
+  for(var i=0;i<nGems;i++){
+    gems.push({x:e.x+rand(-18,18), y:e.y+rand(-18,18), vx:rand(-40,40), vy:rand(-40,40), r:6, val:1, t:rand(0,6)});
+  }
+  sfx.die();
+  if(e.type==='splitter'){
+    spawnEnemy('runner', e.x-14, e.y);
+    spawnEnemy('runner', e.x+14, e.y);
+  }
+  if(isBoss){
+    boss=null; bossBar.classList.add('hidden');
+    shake=14; showToast('👑 WARDEN SLAIN! +'+gained+' pts');
+    player.hp=Math.min(player.maxHp, player.hp+20);
+  }
+  if(idx>=0) enemies.splice(idx,1);
+  waveKills++;
+}
+function hurtPlayer(dmg){
+  if(player.invuln>0) return;
+  var real=Math.max(1, dmg - player.armor);
+  player.hp-=real;
+  player.invuln=0.9; shake=8;
+  burst(player.x,player.y,'#ff4d6d',10,140);
+  addText(player.x,player.y-22,'-'+real,'#ff6b81');
+  combo=0; comboTimer=0;
+  sfx.hurt();
+  if(player.hp<=0){
+    player.hp=0;
+    gameOver();
+  }
+}
+function gameOver(){
+  state='over';
+  var b=loadBest();
+  var isBest = score>b.score;
+  if(isBest) saveBest(score,wave);
+  var nb=loadBest();
+  $('finalScore').textContent=score.toLocaleString();
+  $('finalWave').textContent=wave;
+  $('finalKills').textContent=kills.toLocaleString();
+  $('finalTime').textContent=fmtTime(elapsed);
+  $('finalLevel').textContent=player.level;
+  $('finalBest').textContent=nb.score.toLocaleString();
+  $('newBest').classList.toggle('hidden', !isBest);
+  burst(player.x,player.y,'#ff8c2e',60,300);
+  hud.classList.add('hidden');
+  overEl.classList.remove('hidden');
+  showBest();
+}
+
+// ---------- update ----------
+function update(dt){
+  if(state!=='playing') return;
+  elapsed+=dt;
+  var p=player;
+
+  // combo timer
+  if(comboTimer>0){ comboTimer-=dt; if(comboTimer<=0) combo=0; }
+  comboMult=1+Math.min(combo,20)*0.05;
+
+  // movement
+  var mx=0,my=0;
+  if(keys['w']||keys['arrowup']) my-=1;
+  if(keys['s']||keys['arrowdown']) my+=1;
+  if(keys['a']||keys['arrowleft']) mx-=1;
+  if(keys['d']||keys['arrowright']) mx+=1;
+  if(mx||my){
+    var len=Math.hypot(mx,my); mx/=len; my/=len;
+    p.x=clamp(p.x+mx*p.speed*dt, p.r, W-p.r);
+    p.y=clamp(p.y+my*p.speed*dt, p.r, H-p.r);
+    p.walk+=dt*10;
+  }
+  // Aim: auto-fire targets the nearest enemy/boss; mouse aim wins when
+  // auto-fire is off or no enemy is in range.
+  var target=null, bestD=560*560, i;
+  for(i=0;i<enemies.length;i++){
+    var d2=dist2(enemies[i].x,enemies[i].y,p.x,p.y);
+    if(d2<bestD){ bestD=d2; target=enemies[i]; }
+  }
+  if(boss){
+    var bd2=dist2(boss.x,boss.y,p.x,p.y);
+    if(bd2<bestD){ target=boss; }
+  }
+  if(autoFire && target) p.angle=Math.atan2(target.y-p.y, target.x-p.x);
+  else if(mouse.seen) p.angle=Math.atan2(mouse.y-p.y, mouse.x-p.x);
+  if(p.invuln>0) p.invuln-=dt;
+  if(p.regen>0) p.hp=Math.min(p.maxHp, p.hp+p.regen*dt);
+
+  // firing
+  p.fireTimer-=dt;
+  var wantFire = autoFire || mouse.firing || keys[' '];
+  if(wantFire && p.fireTimer<=0){
+    fire();
+    p.fireTimer=1/p.fireRate;
+  }
+
+  // waves
+  if(waveState==='fighting'){
+    if(wave%5===0 && !boss && waveKills===0 && enemies.length===0){
+      spawnBoss();
+    }
+    spawnTimer-=dt;
+    var aliveTarget = waveTarget - waveKills;
+    if(enemies.length < Math.min(14, 4+wave) && waveKills + enemies.length < waveTarget){
+      if(spawnTimer<=0){ spawnEdge(); spawnTimer=Math.max(0.25, 1.1 - wave*0.06); }
+    }
+    if(waveKills>=waveTarget && enemies.length===0 && !boss){
+      waveState='between'; betweenTimer=2.2;
+      var bonus=50+wave*10; score+=bonus;
+      showToast('Wave '+wave+' cleared! +'+bonus+' bonus');
+      p.hp=Math.min(p.maxHp, p.hp+8);
+    }
+  } else if(waveState==='between'){
+    betweenTimer-=dt;
+    if(betweenTimer<=0){
+      wave++; waveKills=0; waveTarget=waveSize(wave); waveState='fighting';
+      spawnWaveBanner('WAVE '+wave);
+      sfx.wave();
+    }
+  }
+
+  // bullets
+  for(var i=bullets.length-1;i>=0;i--){
+    var b=bullets[i];
+    b.x+=b.vx*dt; b.y+=b.vy*dt;
+    if(b.x<-30||b.x>W+30||b.y<-30||b.y>H+30){ bullets.splice(i,1); continue; }
+    for(var j=enemies.length-1;j>=0;j--){
+      var e=enemies[j];
+      if(b.hit[j]) continue;
+      if(dist2(b.x,b.y,e.x,e.y) < (b.r+e.r)*(b.r+e.r)){
+        var crit=Math.random()<p.crit;
+        var dmg=b.dmg*(crit?2:1);
+        e.hp-=dmg; e.flash=0.12;
+        addText(e.x, e.y-e.r-6, (crit?'CRIT ':'')+Math.round(dmg), crit?'#ffd166':'#fff');
+        burst(b.x,b.y,'#ffb347',4,90);
+        sfx.hit();
+        if(b.pierce>0){ b.pierce--; b.hit[j]=true; }
+        else { bullets.splice(i,1); }
+        if(e.hp<=0) killEnemy(e,j);
+        break;
+      }
+    }
+    // boss is in enemies? No — boss handled separately below, but bullets vs boss:
+    if(boss && bullets.indexOf(b)!==-1){
+      if(dist2(b.x,b.y,boss.x,boss.y) < (b.r+boss.r)*(b.r+boss.r)){
+        var c2=Math.random()<p.crit;
+        boss.hp-=b.dmg*(c2?2:1); boss.flash=0.12;
+        burst(b.x,b.y,'#ff2e63',5,100);
+        if(b.pierce>0){ b.pierce--; } else { var bi=bullets.indexOf(b); if(bi>=0) bullets.splice(bi,1); }
+        if(boss.hp<=0){
+          var fake={type:'boss',x:boss.x,y:boss.y,score:boss.score,xp:boss.xp,color:boss.color};
+          killEnemy(fake, -1); // idx -1: no enemies.splice, boss cleared inside killEnemy
+          boss=null; bossBar.classList.add('hidden');
+        }
+      }
+    }
+  }
+
+  // enemies
+  for(var k=enemies.length-1;k>=0;k--){
+    var en=enemies[k];
+    if(en.flash>0) en.flash-=dt;
+    en.wob+=dt*3;
+    var dx=p.x-en.x, dy=p.y-en.y, d=Math.hypot(dx,dy)||1;
+    var sp=en.speed;
+    if(en.type==='shooter'){
+      if(d>220){ en.x+=dx/d*sp*dt; en.y+=dy/d*sp*dt; }
+      else if(d<160){ en.x-=dx/d*sp*0.6*dt; en.y-=dy/d*sp*0.6*dt; }
+      en.shootTimer-=dt;
+      if(en.shootTimer<=0 && d<420){
+        en.shootTimer=rand(1.6,2.4);
+        ebullets.push({x:en.x,y:en.y,vx:dx/d*170,vy:dy/d*170,r:6});
+        beep(300,0.1,'sine',0.04,180);
+      }
+    } else {
+      var wob=Math.sin(en.wob)*0.35;
+      var nx=dx/d, ny=dy/d;
+      var px=-ny*wob, py=nx*wob;
+      en.x+=(nx+px)*sp*dt; en.y+=(ny+py)*sp*dt;
+    }
+    if(dist2(en.x,en.y,p.x,p.y) < (en.r+p.r)*(en.r+p.r)){
+      hurtPlayer(en.dmg);
+      // knock enemy back a little so it doesn't stick
+      en.x-=dx/d*14; en.y-=dy/d*14;
+      if(state!=='playing') return;
+    }
+  }
+
+  // boss update
+  if(boss){
+    if(boss.flash>0) boss.flash-=dt;
+    var bdx=p.x-boss.x, bdy=p.y-boss.y, bd=Math.hypot(bdx,bdy)||1;
+    boss.x+=bdx/bd*boss.speed*dt; boss.y+=bdy/bd*boss.speed*dt;
+    boss.x=clamp(boss.x,boss.r,W-boss.r); boss.y=clamp(boss.y,boss.r,H-boss.r);
+    boss.shootTimer-=dt; boss.chargeTimer-=dt;
+    if(boss.shootTimer<=0){
+      boss.shootTimer=1.4;
+      for(var s=0;s<8;s++){
+        var a=s/8*Math.PI*2;
+        ebullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*150,vy:Math.sin(a)*150,r:7});
+      }
+      beep(220,0.15,'sawtooth',0.06,110);
+    }
+    if(boss.chargeTimer<=0){
+      boss.chargeTimer=4.5;
+      boss.x+=bdx/bd*46; boss.y+=bdy/bd*46;
+      shake=6;
+    }
+    if(dist2(boss.x,boss.y,p.x,p.y) < (boss.r+p.r)*(boss.r+p.r)){
+      hurtPlayer(boss.dmg);
+      if(state!=='playing') return;
+    }
+    bossFill.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
+  }
+
+  // enemy bullets
+  for(var m=ebullets.length-1;m>=0;m--){
+    var eb=ebullets[m];
+    eb.x+=eb.vx*dt; eb.y+=eb.vy*dt;
+    if(eb.x<-20||eb.x>W+20||eb.y<-20||eb.y>H+20){ ebullets.splice(m,1); continue; }
+    if(dist2(eb.x,eb.y,p.x,p.y) < (eb.r+p.r)*(eb.r+p.r)){
+      hurtPlayer(10); ebullets.splice(m,1);
+      if(state!=='playing') return;
+    }
+  }
+
+  // gems (magnet + pickup)
+  for(var g=gems.length-1;g>=0;g--){
+    var gm=gems[g];
+    gm.t+=dt;
+    gm.x+=gm.vx*dt; gm.y+=gm.vy*dt; gm.vx*=0.92; gm.vy*=0.92;
+    var gd=Math.hypot(p.x-gm.x,p.y-gm.y);
+    if(gd<p.magnet){
+      gm.x+=(p.x-gm.x)/gd*380*dt; gm.y+=(p.y-gm.y)/gd*380*dt;
+    } else if(gd<260){
+      // loose shards drift toward the player so kiting still collects them
+      gm.x+=(p.x-gm.x)/gd*70*dt; gm.y+=(p.y-gm.y)/gd*70*dt;
+    }
+    if(gd<p.r+10){
+      gems.splice(g,1);
+      score+=5;
+      gainXp(gm.val);
+      sfx.gem();
+      if(state!=='playing') return;
+    }
+  }
+
+  // particles / texts
+  for(var q=parts.length-1;q>=0;q--){ var pt=parts[q]; pt.life-=dt; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vx*=0.96; pt.vy*=0.96; if(pt.life<=0) parts.splice(q,1); }
+  for(var t=texts.length-1;t>=0;t--){ texts[t].life-=dt; texts[t].y-=34*dt; if(texts[t].life<=0) texts.splice(t,1); }
+  if(shake>0) shake=Math.max(0,shake-dt*30);
+
+  updateHUD();
+}
+function updateHUD(){
+  hpFill.style.width=Math.max(0,player.hp/player.maxHp*100)+'%';
+  hpText.textContent=Math.ceil(player.hp)+' / '+player.maxHp;
+  xpFill.style.width=Math.min(100,player.xp/player.xpNext*100)+'%';
+  xpText.textContent='Lv '+player.level+' · '+player.xp+' / '+player.xpNext+' XP';
+  scoreVal.textContent=score.toLocaleString();
+  waveVal.textContent=wave;
+  levelVal.textContent=player.level;
+  timeVal.textContent=fmtTime(elapsed);
+  comboVal.textContent='×'+comboMult.toFixed(2).replace(/\.00$/,'');
+}
+
+// ---------- render ----------
+var bgEmbers=[];
+for(var bi=0;bi<40;bi++) bgEmbers.push({x:rand(0,W),y:rand(0,H),r:rand(1,2.5),s:rand(8,26),o:rand(0.15,0.5)});
+function draw(){
+  ctx.save();
+  if(shake>0) ctx.translate(rand(-shake,shake)*0.5, rand(-shake,shake)*0.5);
+  // bg
+  var g=ctx.createRadialGradient(W/2,H/2,80,W/2,H/2,620);
+  g.addColorStop(0,'#131a30'); g.addColorStop(1,'#070a14');
+  ctx.fillStyle=g; ctx.fillRect(-20,-20,W+40,H+40);
+  ctx.strokeStyle='rgba(255,255,255,0.045)'; ctx.lineWidth=1;
+  for(var gx=0;gx<=W;gx+=48){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
+  for(var gy=0;gy<=H;gy+=48){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+  // drifting embers
+  var now=Date.now()/1000;
+  bgEmbers.forEach(function(e){
+    e.y-=e.s*0.016; if(e.y<-4){ e.y=H+4; e.x=rand(0,W); }
+    ctx.globalAlpha=e.o*(0.7+0.3*Math.sin(now*2+e.x));
+    ctx.fillStyle='#ff8c2e'; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  // arena border glow
+  ctx.strokeStyle='rgba(255,140,46,0.35)'; ctx.lineWidth=2;
+  ctx.strokeRect(4,4,W-8,H-8);
+
+  if(state==='menu'){ ctx.restore(); return; }
+
+  // gems
+  gems.forEach(function(gm){
+    var bob=Math.sin(gm.t*5)*2;
+    ctx.save(); ctx.translate(gm.x,gm.y+bob); ctx.rotate(Math.PI/4);
+    ctx.fillStyle='#35e0ff'; ctx.shadowColor='#35e0ff'; ctx.shadowBlur=10;
+    ctx.fillRect(-5,-5,10,10); ctx.restore();
+  });
+  // enemy bullets
+  ebullets.forEach(function(eb){
+    ctx.fillStyle='#ff5ad0'; ctx.shadowColor='#ff5ad0'; ctx.shadowBlur=12;
+    ctx.beginPath(); ctx.arc(eb.x,eb.y,eb.r,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+  });
+  // enemies
+  enemies.forEach(function(e){ drawEnemy(e); });
+  if(boss) drawEnemy(boss,true);
+  // bullets
+  bullets.forEach(function(b){
+    ctx.fillStyle='#ffd166'; ctx.shadowColor='#ff8c2e'; ctx.shadowBlur=12;
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+  });
+  // player
+  drawPlayer();
+  // particles
+  parts.forEach(function(pt){
+    ctx.globalAlpha=Math.max(0,pt.life/pt.max);
+    ctx.fillStyle=pt.color; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r,0,Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  // floating texts
+  ctx.font='bold 13px system-ui, sans-serif'; ctx.textAlign='center';
+  texts.forEach(function(t){
+    ctx.globalAlpha=Math.min(1,t.life*2);
+    ctx.fillStyle=t.color; ctx.fillText(t.str,t.x,t.y);
+  });
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+function drawEnemy(e, isBoss){
+  ctx.save(); ctx.translate(e.x,e.y);
+  if(e.flash>0){ ctx.shadowColor='#fff'; ctx.shadowBlur=18; }
+  else { ctx.shadowColor=e.color; ctx.shadowBlur=10; }
+  ctx.fillStyle=e.color;
+  if(e.type==='tank'){
+    ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(0,0,e.r-6,0,Math.PI*2); ctx.stroke();
+  } else if(e.type==='shooter'){
+    ctx.beginPath();
+    for(var i=0;i<5;i++){ var a=-Math.PI/2+i/5*Math.PI*2; var a2=a+Math.PI/5;
+      ctx.lineTo(Math.cos(a)*e.r, Math.sin(a)*e.r); ctx.lineTo(Math.cos(a2)*e.r*0.55, Math.sin(a2)*e.r*0.55); }
+    ctx.closePath(); ctx.fill();
+  } else if(e.type==='runner'){
+    ctx.beginPath(); ctx.moveTo(e.r,0); ctx.lineTo(-e.r*0.8,e.r*0.75); ctx.lineTo(-e.r*0.4,0); ctx.lineTo(-e.r*0.8,-e.r*0.75); ctx.closePath(); ctx.fill();
+  } else if(isBoss){
+    ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#ffd166';
+    ctx.beginPath(); ctx.arc(-14,-10,5,0,Math.PI*2); ctx.arc(14,-10,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#7a0018'; ctx.fillRect(-18,6,36,6);
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0,e.r+5,0,Math.PI*2); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.45)'; ctx.beginPath(); ctx.arc(-5,-4,3,0,Math.PI*2); ctx.arc(5,-4,3,0,Math.PI*2); ctx.fill();
+  }
+  ctx.shadowBlur=0;
+  // hp bar for damaged / boss / tank
+  if(e.hp<e.maxHp){
+    var w=isBoss?64:30;
+    ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(-w/2,-e.r-12,w,5);
+    ctx.fillStyle='#ff4d6d'; ctx.fillRect(-w/2,-e.r-12,w*Math.max(0,e.hp/e.maxHp),5);
+  }
+  ctx.restore();
+}
+function drawPlayer(){
+  var p=player;
+  ctx.save(); ctx.translate(p.x,p.y);
+  if(p.invuln>0 && Math.floor(Date.now()/40)%2===0) ctx.globalAlpha=0.45;
+  // glow
+  var gg=ctx.createRadialGradient(0,0,4,0,0,34);
+  gg.addColorStop(0,'rgba(255,140,46,.5)'); gg.addColorStop(1,'rgba(255,140,46,0)');
+  ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(0,0,34,0,Math.PI*2); ctx.fill();
+  // body
+  ctx.rotate(p.angle);
+  ctx.fillStyle='#ffb347'; ctx.shadowColor='#ff8c2e'; ctx.shadowBlur=14;
+  ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#1a0d00'; ctx.beginPath(); ctx.arc(6,0,7,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#ff8c2e'; ctx.fillRect(10,-3,14,6); // barrel / flame tip
+  ctx.restore();
+  // aim line (subtle)
+  if(mouse.seen){
+    ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+Math.cos(p.angle)*34, p.y+Math.sin(p.angle)*34); ctx.stroke();
+  }
+}
+
+// ---------- loop ----------
+var last=0;
+function loop(ts){
+  requestAnimationFrame(loop);
+  var dt=Math.min(0.05, (ts-last)/1000 || 0.016);
+  last=ts;
+  if(state==='playing' && !frozen) update(dt);
+  draw();
+}
+requestAnimationFrame(loop);
+
+
+// ---------- deterministic screenshot scenes (?shot=start|play|end&seed=N) ----------
+// Same convention as the kit starter: a shot scene plays the real rules forward
+// from a fresh world for a fixed number of steps, steered by a simple autopilot,
+// so the frame is what a short game really looks like and the same seed always
+// gives the same frame. No network, no wall clock in the simulation itself.
+var frozen = false;
+var shotParams = null;
+try { shotParams = new URLSearchParams(window.location.search); } catch (e) { shotParams = null; }
+var shotMode = shotParams ? shotParams.get('shot') : null;
+var shotSeed = parseInt((shotParams && shotParams.get('seed')) || '1', 10) || 1;
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function shotAutopilot(suicidal) {
+  var p = player, k = keys;
+  k['w'] = k['a'] = k['s'] = k['d'] = false;
+  var ne = null, nd = 1e9, i;
+  for (i = 0; i < enemies.length; i++) {
+    var d2 = dist2(enemies[i].x, enemies[i].y, p.x, p.y);
+    if (d2 < nd) { nd = d2; ne = enemies[i]; }
+  }
+  if (boss) {
+    var bd2 = dist2(boss.x, boss.y, p.x, p.y);
+    if (bd2 < nd) { nd = bd2; ne = boss; }
+  }
+  var tx, ty;
+  if (suicidal) { tx = W / 2; ty = H / 2; } // end scene: greedy pilot, never flees
+  else if (ne && nd < 150 * 150) { tx = p.x + (p.x - ne.x); ty = p.y + (p.y - ne.y); } // flee
+  else if (gems.length) {
+    var g = gems[0], gd = 1e9;
+    for (i = 0; i < gems.length; i++) {
+      var g2 = dist2(gems[i].x, gems[i].y, p.x, p.y);
+      if (g2 < gd) { gd = g2; g = gems[i]; }
+    }
+    tx = g.x; ty = g.y; // chase the nearest shard
+  } else { tx = W / 2; ty = H / 2; }
+  var dx = tx - p.x, dy = ty - p.y;
+  if (Math.abs(dx) > 12) k[dx > 0 ? 'd' : 'a'] = true;
+  if (Math.abs(dy) > 12) k[dy > 0 ? 's' : 'w'] = true;
+}
+function runShot(seconds, suicidal) {
+  var steps = Math.round(seconds * 60), s;
+  for (s = 0; s < steps; s++) {
+    if (state === 'levelup') { if (currentOffers[0]) chooseUpgrade(currentOffers[0]); continue; }
+    if (state === 'over') break;
+    if (state !== 'playing') break;
+    shotAutopilot(suicidal);
+    update(1 / 60);
+  }
+  keys['w'] = keys['a'] = keys['s'] = keys['d'] = false;
+}
+function stageShot() {
+  if (!shotMode) { try { window.__shotReady = true; } catch (e) {} return; }
+  var realRandom = Math.random;
+  try {
+    Math.random = mulberry32(shotSeed);
+    if (shotMode === 'play') {
+      startGame();
+      runShot(26, false); // 26 s of real play, careful autopilot
+      if (state === 'levelup' && currentOffers[0]) chooseUpgrade(currentOffers[0]);
+    } else if (shotMode === 'end') {
+      startGame();
+      runShot(600, true); // reckless autopilot until the run ends
+      if (state !== 'over') { // safety net: the arena always claims the hurried
+        while (state === 'playing') { player.invuln = 0; hurtPlayer(999); }
+      }
+    }
+    // start: the menu is already showing; nothing to stage.
+  } catch (e) { /* never break the real game for a shot scene */ }
+  Math.random = realRandom;
+  frozen = true;
+  waveBanner.classList.add('hidden');
+  try { window.__shotReady = true; } catch (e) {}
+}
+
+// ---------- flow ----------
+function startGame(){
+  ac();
+  reset();
+  state='playing';
+  menu.classList.add('hidden');
+  overEl.classList.add('hidden');
+  pauseEl.classList.add('hidden');
+  levelupEl.classList.add('hidden');
+  hud.classList.remove('hidden');
+  bossBar.classList.add('hidden');
+  updateHUD();
+}
+function pauseGame(){
+  if(state!=='playing') return;
+  state='paused'; pauseEl.classList.remove('hidden');
+}
+function resumeGame(){
+  if(state!=='paused') return;
+  state='playing'; pauseEl.classList.add('hidden');
+}
+function quitToMenu(){
+  state='menu';
+  pauseEl.classList.add('hidden'); overEl.classList.add('hidden'); levelupEl.classList.add('hidden');
+  hud.classList.add('hidden'); bossBar.classList.add('hidden');
+  menu.classList.remove('hidden');
+  showBest();
+}
+function toggleMute(){
+  muted=!muted;
+  muteBtn.textContent = muted ? '🔇 Sound: Off' : '🔊 Sound: On';
+}
+function toggleAuto(){
+  autoFire=!autoFire;
+  autoBtn.textContent = autoFire ? '🎯 Auto-fire: On' : '🎯 Auto-fire: Off';
+}
+
+// ---------- input ----------
+document.addEventListener('keydown', function(e){
+  var k=e.key.toLowerCase();
+  if([' ','arrowup','arrowdown','arrowleft','arrowright'].indexOf(k)>=0) e.preventDefault();
+  keys[k]=true;
+  if(k==='m') toggleMute();
+  if(k==='f' && state==='playing') toggleAuto();
+  if((k==='p'||k==='escape')){
+    if(state==='playing') pauseGame();
+    else if(state==='paused') resumeGame();
+  }
+  if(state==='levelup' && (k==='1'||k==='2'||k==='3')){
+    var idx=parseInt(k,10)-1;
+    var card=cardsEl.children[idx];
+    if(card) card.click();
+  }
+  if(k==='r' && state==='over') startGame();
+  if(k==='enter' && state==='menu') startGame();
+});
+document.addEventListener('keyup', function(e){ keys[e.key.toLowerCase()]=false; });
+canvas.addEventListener('mousemove', function(e){
+  var r=canvas.getBoundingClientRect();
+  mouse.x=(e.clientX-r.left)*(W/r.width);
+  mouse.y=(e.clientY-r.top)*(H/r.height);
+  mouse.seen=true;
+});
+canvas.addEventListener('mousedown', function(e){ if(e.button===0) mouse.firing=true; ac(); });
+window.addEventListener('mouseup', function(){ mouse.firing=false; });
+canvas.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+$('startBtn').addEventListener('click', startGame);
+$('restartBtn').addEventListener('click', startGame);
+$('resumeBtn').addEventListener('click', resumeGame);
+$('quitBtn').addEventListener('click', quitToMenu);
+$('menuBtn').addEventListener('click', quitToMenu);
+muteBtn.addEventListener('click', toggleMute);
+autoBtn.addEventListener('click', toggleAuto);
+
+showBest();
+stageShot();
+})();
+
+</script>
+</body>
+</html>
